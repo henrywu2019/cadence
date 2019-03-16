@@ -20,7 +20,52 @@
 
 package collection
 
-const (
-	// UUIDStringLength is the length of an UUID represented as a hex string
-	UUIDStringLength = 36 // xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+import (
+	"sync"
 )
+
+type (
+	concurrentPriorityQueueImpl struct {
+		lock          sync.Mutex
+		priorityQueue Queue
+	}
+)
+
+// NewConcurrentPriorityQueue create a new concurrent priority queue
+func NewConcurrentPriorityQueue(compareLess func(this interface{}, other interface{}) bool) Queue {
+	return &concurrentPriorityQueueImpl{
+		priorityQueue: NewPriorityQueue(compareLess),
+	}
+}
+
+// Peek returns the top item of the priority queue
+func (pq *concurrentPriorityQueueImpl) Peek() interface{} {
+	pq.lock.Lock()
+	defer pq.lock.Unlock()
+
+	return pq.priorityQueue.Peek()
+}
+
+// Offer push an item to priority queue
+func (pq *concurrentPriorityQueueImpl) Offer(item interface{}) {
+	pq.lock.Lock()
+	defer pq.lock.Unlock()
+
+	pq.priorityQueue.Offer(item)
+}
+
+// Poll pop an item from priority queue
+func (pq *concurrentPriorityQueueImpl) Poll() interface{} {
+	pq.lock.Lock()
+	defer pq.lock.Unlock()
+
+	return pq.priorityQueue.Poll()
+}
+
+// IsEmpty indicate if the priority queue is empty
+func (pq *concurrentPriorityQueueImpl) IsEmpty() bool {
+	pq.lock.Lock()
+	defer pq.lock.Unlock()
+
+	return pq.priorityQueue.IsEmpty()
+}
