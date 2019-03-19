@@ -126,39 +126,39 @@ func (t *sequentialTaskProcessorImpl) pollAndProcessTaskQueue() {
 
 func (t *sequentialTaskProcessorImpl) processTaskQueue(taskqueue SequentialTaskQueue) {
 	for {
-		if !taskqueue.IsEmpty() {
-			t.processTaskOnce(taskqueue)
-		} else {
-			deleted := t.taskqueues.RemoveIf(taskqueue.QueueID(), func(key interface{}, value interface{}) bool {
-				return value.(SequentialTaskQueue).IsEmpty()
-			})
-			if deleted {
-				return
-			}
+		select {
+		case <-t.shutdownChan:
+			return
+		default:
+			if !taskqueue.IsEmpty() {
+				t.processTaskOnce(taskqueue)
+			} else {
+				deleted := t.taskqueues.RemoveIf(taskqueue.QueueID(), func(key interface{}, value interface{}) bool {
+					return value.(SequentialTaskQueue).IsEmpty()
+				})
+				if deleted {
+					return
+				}
 
-			// if deletion failed, meaning that task queue is offered with new task
-			// continue execution
+				// if deletion failed, meaning that task queue is offered with new task
+				// continue execution
+			}
 		}
 	}
 }
 
 func (t *sequentialTaskProcessorImpl) processTaskOnce(taskqueue SequentialTaskQueue) {
-	select {
-	case <-t.shutdownChan:
-		return
-	default:
-		task := taskqueue.Poll()
-		err := task.Execute()
-		err = task.HandleErr(err)
+	task := taskqueue.Poll()
+	err := task.Execute()
+	err = task.HandleErr(err)
 
-		if err != nil {
-			if task.RetryErr(err) {
-				taskqueue.Offer(task)
-			} else {
-				task.Nack()
-			}
+	if err != nil {
+		if task.RetryErr(err) {
+			taskqueue.Offer(task)
 		} else {
-			task.Ack()
+			task.Nack()
 		}
+	} else {
+		task.Ack()
 	}
 }

@@ -41,7 +41,6 @@ type (
 
 	testSequentialTaskQueueImpl struct {
 		id        uint32
-		hashFn    collection.HashFunc
 		taskQueue collection.Queue
 	}
 
@@ -67,9 +66,9 @@ func newTestSequentialTaskImpl(waitgroup *sync.WaitGroup, queueID uint32, taskID
 func (t *testSequentialTaskImpl) Execute() error {
 	if rand.Float64() < 0.5 {
 		return nil
-	} else {
-		return errors.New("some random error")
 	}
+
+	return errors.New("some random error")
 }
 
 func (t *testSequentialTaskImpl) HandleErr(err error) error {
@@ -118,20 +117,13 @@ func (t *testSequentialTaskImpl) GenTaskQueue() SequentialTaskQueue {
 	taskQueue.Offer(t)
 
 	return &testSequentialTaskQueueImpl{
-		id: t.queueID,
-		hashFn: func(key interface{}) uint32 {
-			return key.(uint32)
-		},
+		id:        t.queueID,
 		taskQueue: taskQueue,
 	}
 }
 
 func (t *testSequentialTaskQueueImpl) QueueID() interface{} {
 	return t.id
-}
-
-func (t *testSequentialTaskQueueImpl) HashFn() collection.HashFunc {
-	return t.hashFn
 }
 
 func (t *testSequentialTaskQueueImpl) Offer(task SequentialTask) {
@@ -153,7 +145,9 @@ func TestSequentialTaskProcessorSuite(t *testing.T) {
 func (s *SequentialTaskProcessorSuite) SetupTest() {
 	s.processor = NewSequentialTaskProcessor(
 		20,
-		(&testSequentialTaskImpl{}).GenTaskQueue().HashFn(),
+		func(key interface{}) uint32 {
+			return key.(uint32)
+		},
 		bark.NewNopLogger(),
 	)
 }

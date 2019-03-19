@@ -22,10 +22,11 @@ package worker
 
 import (
 	"context"
-	"github.com/uber/cadence/client/public"
-	"github.com/uber/cadence/common/blobstore"
 	"sync/atomic"
 	"time"
+
+	"github.com/uber/cadence/client/public"
+	"github.com/uber/cadence/common/blobstore"
 
 	"github.com/uber/cadence/common/cache"
 

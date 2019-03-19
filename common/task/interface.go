@@ -22,7 +22,6 @@ package task
 
 import (
 	"github.com/uber/cadence/common"
-	"github.com/uber/cadence/common/collection"
 )
 
 type (
@@ -47,6 +46,7 @@ type (
 		Nack()
 	}
 
+	// SequentialTask is the interface for tasks which should be executed sequentially
 	SequentialTask interface {
 		// GenTaskQueue return a new SequentialTaskQueue which this task belongs to
 		// this function can be called if SequentialTaskProcessor does not have any
@@ -60,8 +60,6 @@ type (
 	SequentialTaskQueue interface {
 		// QueueID return the ID of the queue, as well as the tasks inside (same)
 		QueueID() interface{}
-		// HashFn return the hash function to be used by SequentialTaskProcessor
-		HashFn() collection.HashFunc
 		// Offer push an task to the task set
 		Offer(task SequentialTask)
 		// Poll pop an task from the task set
